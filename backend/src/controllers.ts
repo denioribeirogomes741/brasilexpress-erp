@@ -95,7 +95,7 @@ export async function createMetodo(req: Request, res: Response) {
 // --- Servico CRUD ---
 export async function listServicos(req: Request, res: Response) {
   try {
-    const r = await runQuery('SELECT COD_SERVICO, DT_ENTRADA, ACESSORIOS, EQUIPAMENTO, VALOR, DESC_SERVICO, OBS, DT_PREVISAO, STATUS, NOME_CLIENTE FROM servico s JOIN cliente c ON s.cod_cliente = c.cod_cliente ORDER BY cod_servico');
+    const r = await runQuery("SELECT COD_SERVICO, to_char(DT_ENTRADA, 'DD/MM/YYYY') AS DATA_ENTRADA, ACESSORIOS, EQUIPAMENTO, VALOR, DESC_SERVICO, OBS, to_char(DT_PREVISAO, 'DD/MM/YYYY') AS DATA_PREVISAO, STATUS, NOME_CLIENTE FROM servico s JOIN cliente c ON s.cod_cliente = c.cod_cliente ORDER BY cod_servico");
     
     const servicos = (r.rows as any[]).map(s => ({
       id: s.COD_SERVICO,
@@ -104,8 +104,8 @@ export async function listServicos(req: Request, res: Response) {
       equipamento: s.EQUIPAMENTO,
       acessorios: s.ACESSORIOS,
       valor: s.VALOR,
-      dataEntrada: s.DT_ENTRADA,
-      previsaoEntrega: s.DT_PREVISAO,
+      dataEntrada: s.DATA_ENTRADA,
+      previsaoEntrega: s.DATA_PREVISAO,
       obs: s.OBS,
       status: s.STATUS
     }));

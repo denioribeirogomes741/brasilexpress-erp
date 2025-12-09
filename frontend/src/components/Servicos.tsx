@@ -20,22 +20,23 @@ export function Servicos() {
   });
 
   const filteredServicos = servicos.filter(servico =>
+    servico.codigo!.toLowerCase().includes(searchTerm.toLowerCase()) ||
     servico.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
     servico.descricao.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Concluído':
-      case 'Entregue':
+    switch (status.toLowerCase()) {
+      case 'concluído':
+      case 'entregue':
         return 'text-green-700 bg-green-100';
-      case 'Em andamento':
+      case 'em andamento':
         return 'text-blue-700 bg-blue-100';
-      case 'Aguardando peça':
+      case 'aguardando peça':
         return 'text-yellow-700 bg-yellow-100';
-      case 'Aguardando aprovação':
+      case 'aguardando aprovação':
         return 'text-orange-700 bg-orange-100';
-      case 'Aprovado':
+      case 'aprovado':
         return 'text-purple-700 bg-purple-100';
       default:
         return 'text-gray-700 bg-gray-100';
@@ -75,11 +76,14 @@ export function Servicos() {
     const fetchServicos = async () => {
       try {
         const data = await listarServicos();
-        setServicos(data);
+        const newData = data.map((item: Servico) => ({
+          ...item,
+          codigo: createCode("OS", item.id)
+        }));
+        setServicos(newData);
       } catch (e) {
         console.error("Erro ao listar clientes:", e);
       }
-      
     };
     fetchServicos();
   }, [])
@@ -120,7 +124,7 @@ export function Servicos() {
                 <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Serviço</th>
                 <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Valor</th>
-                <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Previsão</th>
+                <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Entrada/Previsão</th>
                 <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
@@ -136,7 +140,7 @@ export function Servicos() {
                     </span>
                   </td>
                   <td className="px-6 py-4">R$ {servico.valor.toFixed(2)}</td>
-                  <td className="px-6 py-4 text-gray-600">{servico.previsaoEntrega}</td>
+                  <td className="px-6 py-4 text-gray-600">{servico.dataEntrada.substring(0, 5)} - {servico.previsaoEntrega.substring(0, 5)}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <button className="text-blue-600 hover:text-blue-800 p-1">
