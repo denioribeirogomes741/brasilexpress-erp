@@ -18,7 +18,14 @@ async function runQuery(sql: string, binds: any = {}, opts: any = {}) {
 export async function listCategorias(req: Request, res: Response) {
   try {
     const r = await runQuery('SELECT * FROM categoria ORDER BY cod_categoria');
-    res.json((r.rows as any[]) || []);
+
+    const categorias = (r.rows as any[]).map(cat => ({
+      id: cat.COD_CATEGORIA,
+      nome: cat.NOME_CATEGORIA,
+      prefixo: cat.PREFIXO
+    }));
+
+    res.json(categorias);
   } catch (error) {
     const err = error as Error;
     res.status(500).json({ error: err.message });

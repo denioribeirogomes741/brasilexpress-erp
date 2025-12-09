@@ -3,13 +3,17 @@ import { Plus, Search, Edit2, Trash2, AlertTriangle } from 'lucide-react';
 import type Item from '../objects/Item';
 import { ConfirmDeleteModal } from './modal/DeleteConfimation';
 import { listarItens } from '../services/itemService';
+import type Categoria from '../objects/Categoria';
+import { listarCategorias } from '../services/categoriaService';
 
 export function Estoque() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [showCreateCategory, setShowCreateCategory] = useState(false);
   const [itens, setItens] = useState<Item[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -20,6 +24,11 @@ export function Estoque() {
     preco_custo: '',
     preco_venda: '',
     condicao: '',
+  });
+
+  const [formCatData, setFormCatData] = useState({
+    nome: '',
+    prefix: ''
   });
 
   const filteredItens = itens.filter(item =>
@@ -46,6 +55,18 @@ export function Estoque() {
     setShowModal(false);
   };
 
+  const handleCatSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const novaCategoria: Categoria = {
+      id: categorias.length + 1,
+      nome: formCatData.nome,
+      prefix: formCatData.prefix
+    };
+    setCategorias([...categorias, novaCategoria]);
+    setFormCatData({ nome: '', prefix: '' });
+    setShowCreateCategory(false);
+  };
+
   const handleDelete = (id: number | null) => {
     setShowConfirmDelete(false);
 
@@ -62,10 +83,21 @@ export function Estoque() {
         setItens(data);
       } catch (e) {
         console.error("Erro ao listar itens: ", e);
-      }
+      };
     };
     fetchItens();
+
+    const fetchCategorias = async () => {
+      try {
+        const categoriaData = await listarCategorias();
+        setCategorias(categoriaData);
+      } catch (e) {
+        console.error("Erro ao listar categorias: ", e);
+      };
+    };
+    fetchCategorias();
   }, []);
+  
 
   const itensAbaixoMinimo = itens.filter(item => item.quantidade < item.estoque_minimo);
 
@@ -181,25 +213,55 @@ export function Estoque() {
           <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="mb-4">Novo Item no Estoque</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="">
                 <div>
                   <label className="block text-sm mb-1 text-gray-700">Categoria</label>
+                  <div className='flex h-10 justify-between'>
+                    <select className='w-7/10 px-1 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent' onChange={(e) => setFormData({...formData, categoria: e.target.value})} name="categoria" id="categoria">
+                      {categorias.map((categoria) => (
+                        <option value={categoria.id}>{categoria.nome}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => {
+                        setShowModal(false);
+                        setShowCreateCategory(true);
+                      }}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                    >
+                      <Plus size={20} />
+                      Nova Categoria
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm mb-1 text-gray-700">Nome do Produto</label>
                   <input
                     type="text"
+                    maxLength={30}
                     required
-                    value={formData.categoria}
-                    onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
+                    value={formData.nome}
+                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
+                <div>
+                  <label className='block text-sm mb-1 text-gray-700'>Condição</label>
+                  <select className='w-full px-1 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent' onChange={(e) => setFormData({...formData, condicao: e.target.value})} name="condicao" id="condicao">
+                    <option value="Novo">Novo</option>
+                    <option value="Usado">Usado</option>
+                  </select>
+                </div>
               </div>
               <div>
-                <label className="block text-sm mb-1 text-gray-700">Nome do Produto</label>
-                <input
-                  type="text"
+                <label className="block text-sm mb-1 text-gray-700">Descrição</label>
+                <textarea
                   required
-                  value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  value={formData.descricao}
+                  maxLength={200}
+                  onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -253,6 +315,52 @@ export function Estoque() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Adicionar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {showCreateCategory && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="mb-4">Nova Categoria</h2>
+            <form onSubmit={handleCatSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm mb-1 text-gray-700">Nome da Categoria</label>
+                <input
+                  type="text"
+                  maxLength={30}
+                  required
+                  value={formCatData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1 text-gray-700">Prefixo da Categoria</label>
+                <input
+                  type="text"
+                  maxLength={30}
+                  required
+                  value={formCatData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateCategory(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Cancelar
