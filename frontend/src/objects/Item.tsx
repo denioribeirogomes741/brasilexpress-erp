@@ -1,11 +1,12 @@
 export default interface Item {
   id: number;
-  codigo: string;
+  codigo?: string;
   nome: string;
+  descricao: string;
   categoria: string;
   quantidade: number;
   estoque_minimo: number;
   preco_custo: number;
   preco_venda: number;
-  fornecedor: string;
-}
+  condicao: string;
+};

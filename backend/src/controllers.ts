@@ -174,8 +174,22 @@ export async function createCliente(req: Request, res: Response) {
 // --- Item CRUD ---
 export async function listItems(req: Request, res: Response) {
   try {
-    const r = await runQuery('SELECT * FROM item ORDER BY cod_item');
-    res.json((r.rows as any[]) || []);
+    const r = await runQuery('SELECT COD_ITEM, IDENTIFICADOR, NOME_ITEM, DESCRICAO, MIN_QNT, QNT, NOME_CATEGORIA, CONDICAO, PR_CUSTO, PR_VENDA FROM item i JOIN categoria c ON i.cod_categoria = c.cod_categoria ORDER BY cod_item');
+    
+    const itens = (r.rows as any[]).map(i => ({
+      id: i.COD_ITEM,
+      codigo: i.IDENTIFICADOR,
+      nome: i.NOME_ITEM,
+      descricao: i.DESCRICAO,
+      estoque_minimo: i.MIN_QNT,
+      quantidade: i.QNT,
+      categoria: i.NOME_CATEGORIA,
+      condicao: i.CONDICAO,
+      preco_custo: i.PR_CUSTO,
+      preco_venda: i.PR_VENDA
+    }));
+    
+    res.json(itens);
   } catch (error) {
     const err = error as Error;
     res.status(500).json({ error: err.message });
