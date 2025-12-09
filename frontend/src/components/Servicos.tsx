@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, Trash2, Eye } from 'lucide-react';
 import type Servico from '../objects/Servico';
 import { ConfirmDeleteModal } from './modal/DeleteConfimation';
 import { createCode } from '../util/CodeCreator';
 import { listarServicos } from '../services/servicoService';
+import MoreInfoServicos from '../components/modal/MoreInfoServicos';
+import EditServico from '../components/modal/EditServico';
 
 export function Servicos() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -11,6 +13,9 @@ export function Servicos() {
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [servicos, setServicos] = useState<Servico[]>([]);
+  const [showMoreInfo, setShowMoreInfo] = useState(false);
+  const [showEditServico, setShowEditServico] = useState(false);
+  const [selectedServico, setSelectedServico] = useState<Servico | null>(null);
 
   const [formData, setFormData] = useState({
     cliente: '',
@@ -24,6 +29,17 @@ export function Servicos() {
     servico.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
     servico.descricao.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const abrirMaisInfo = (servico: Servico) => {
+    setSelectedServico(servico);
+    setShowMoreInfo(true);
+  }
+
+  const abrirEditServico = (servico: Servico) => {
+    setSelectedServico(servico);
+    setShowMoreInfo(false);
+    setShowEditServico(true);
+  }
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -143,11 +159,11 @@ export function Servicos() {
                   <td className="px-6 py-4 text-gray-600">{servico.dataEntrada.substring(0, 5)} - {servico.previsaoEntrega.substring(0, 5)}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <button className="text-blue-600 hover:text-blue-800 p-1">
+                      <button
+                        className="text-blue-600 hover:text-blue-800 p-1"
+                        onClick={() => abrirMaisInfo(servico)}
+                      >
                         <Eye size={18} />
-                      </button>
-                      <button className="text-gray-600 hover:text-gray-800 p-1">
-                        <Edit2 size={18} />
                       </button>
                       <button
                         onClick={() => {
@@ -236,6 +252,18 @@ export function Servicos() {
         isOpen={showConfirmDelete}
         onCancel={() => setShowConfirmDelete(false)}
         onConfirm={() => handleDelete(deleteId)}
+      />
+      <MoreInfoServicos
+        open={showMoreInfo}
+        onClose={() => setShowMoreInfo(false)}
+        servico={selectedServico} 
+        onEdit={() => abrirEditServico(selectedServico!)}
+      />
+      <EditServico
+        open={showEditServico}
+        onClose={() => setShowEditServico(false)}
+        servico={selectedServico} 
+        onSave={() => setShowEditServico(false)}
       />
     </div>
   );
