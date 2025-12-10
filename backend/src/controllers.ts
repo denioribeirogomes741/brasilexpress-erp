@@ -22,7 +22,7 @@ export async function listCategorias(req: Request, res: Response) {
     const categorias = (r.rows as any[]).map(cat => ({
       id: cat.COD_CATEGORIA,
       nome: cat.NOME_CATEGORIA,
-      prefixo: cat.PREFIXO
+      prefix: cat.PREFIXO
     }));
 
     res.json(categorias);
@@ -46,8 +46,17 @@ export async function getCategoria(req: Request, res: Response) {
 export async function createCategoria(req: Request, res: Response) {
   const { nome_categoria, prefixo } = req.body;
   try {
-    await runQuery('INSERT INTO categoria (nome_categoria, prefixo) VALUES (:nome_categoria, :prefixo)', { nome_categoria, prefixo });
-    res.status(201).json({ ok: true });
+    await runQuery(
+      'INSERT INTO categoria (nome_categoria, prefixo) VALUES (:nome_categoria, :prefixo)',
+      { nome_categoria, prefixo }
+    );
+
+    const r = await runQuery(
+      'SELECT * FROM categoria WHERE nome_categoria = :nome_categoria AND prefixo = :prefixo ORDER BY cod_categoria DESC FETCH FIRST 1 ROWS ONLY',
+      { nome_categoria, prefixo }
+    );
+
+    res.status(201).json((r.rows as any[])[0]);
   } catch (error) {
     const err = error as Error;
     res.status(500).json({ error: err.message });
@@ -64,6 +73,22 @@ export async function updateCategoria(req: Request, res: Response) {
     const err = error as Error;
     res.status(500).json({ error: err.message });
   }
+
+  /*try {
+    await runQuery(
+      'UPDATE categoria SET nome_categoria=:nome_categoria, prefixo=:prefixo WHERE cod_categoria=:id', { nome_categoria, prefixo, id }
+    );
+
+    const r = await runQuery(
+      'SELECT * FROM categoria WHERE cod_categoria = :id',
+      { nome_categoria, prefixo, id }
+    );
+
+    res.status(201).json((r.rows as any[])[0]);
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message });
+  }*/
 }
 
 export async function deleteCategoria(req: Request, res: Response) {
