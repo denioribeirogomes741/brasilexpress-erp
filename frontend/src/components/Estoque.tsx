@@ -1,17 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, AlertTriangle, XIcon, AlignEndVertical } from 'lucide-react';
 import type Item from '../objects/Item';
 import { ConfirmDeleteModal } from './modal/DeleteConfimation';
 import { listarItens } from '../services/itemService';
 import type Categoria from '../objects/Categoria';
-import { listarCategorias } from '../services/categoriaService';
+import { atualizarCategoria, criarCategoria, listarCategorias } from '../services/categoriaService';
+import { EditCategoria } from './modal/EditCategoria';
 
 export function Estoque() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [selectedCategoria, setSelectedCategoria] = useState<Categoria | null>(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [showCategories, setShowCategories] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [showEditCategory, setShowEditCategory] = useState(false);
   const [itens, setItens] = useState<Item[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
 
@@ -55,13 +59,17 @@ export function Estoque() {
     setShowModal(false);
   };
 
-  const handleCatSubmit = (e: React.FormEvent) => {
+  const handleCatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const response = await criarCategoria(formCatData.nome, formCatData.prefix);
+
     const novaCategoria: Categoria = {
-      id: categorias.length + 1,
-      nome: formCatData.nome,
-      prefix: formCatData.prefix
-    };
+      id: response.COD_CATEGORIA,
+      nome: response.NOME_CATEGORIA,
+      prefix: response.PREFIXO
+    }
+
     setCategorias([...categorias, novaCategoria]);
     setFormCatData({ nome: '', prefix: '' });
     setShowCreateCategory(false);
@@ -75,6 +83,33 @@ export function Estoque() {
     setItens(itens.filter(i => i.id !== id));
     setShowConfirmDelete(false);
   };
+
+  const handleCategoryEdit = async (categoria: Categoria) => {
+    setShowEditCategory(false);
+    try {
+      const response = await atualizarCategoria(categoria.id, categoria.nome, categoria.prefix);
+      if (response.ok) {
+        const updatedCategorias = categorias.map((cat) => {
+          if (cat.id == categoria.id) {
+            return ({
+              id: categoria.id,
+              nome: categoria.nome,
+              prefix: categoria.prefix
+            })
+          } else {
+            return ({
+              id: cat.id,
+              nome: cat.nome,
+              prefix: cat.prefix
+            })
+          }
+        })
+        setCategorias(updatedCategorias);
+      };
+    } catch (e) {
+      console.error("Erro ao atualizar categoria: ", e);
+    }
+  }
 
   useEffect(() => {
     const fetchItens = async () => {
@@ -216,21 +251,18 @@ export function Estoque() {
               <div className="">
                 <div>
                   <label className="block text-sm mb-1 text-gray-700">Categoria</label>
-                  <div className='flex h-10 justify-between'>
-                    <select className='w-7/10 px-1 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent' onChange={(e) => setFormData({...formData, categoria: e.target.value})} name="categoria" id="categoria">
+                  <div className='flex h-10 gap-2 justify-between'>
+                    <select className='w-full px-1 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent' onChange={(e) => setFormData({...formData, categoria: e.target.value})} name="categoria" id="categoria">
                       {categorias.map((categoria) => (
                         <option value={categoria.id}>{categoria.nome}</option>
                       ))}
                     </select>
                     <button
-                      onClick={() => {
-                        setShowModal(false);
-                        setShowCreateCategory(true);
-                      }}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                      onClick={() => setShowCategories(true)}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 flex items-center gap-2"
                     >
-                      <Plus size={20} />
-                      Nova Categoria
+                      <AlignEndVertical size={20} />
+                      Categorias
                     </button>
                   </div>
                 </div>
@@ -330,6 +362,65 @@ export function Estoque() {
           </div>
         </div>
       )}
+      {showCategories && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] min-h-[50vh] overflow-y-auto">
+            <div className='flex justify-between items-center mb-4'>
+              <h2 className="">Categorias</h2>
+              <div className='flex'>
+                <button
+                  onClick={() => {
+                    setShowCreateCategory(true);
+                  }}
+                  className="text-blue-700 px-2 py-2 rounded-lg transition hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <Plus size={25} />
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCategories(false);
+                  }}
+                  className="text-gray-700 px-2 py-2 rounded-lg transition hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <XIcon size={25} />
+                </button>
+              </div>
+            </div>
+            
+            <table className='w-full'>
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Nome da categoria</th>
+                  <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Prefixo</th>
+                  <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {categorias.map((categoria) => (
+                  <tr key={categoria.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-2">{categoria.nome}</td>
+                    <td className="px-6 py-2">{categoria.prefix}</td>
+                    <td className="px-6 py-2 flex gap-3">
+                      <button 
+                        className='hover:scale-110 transition'
+                        onClick={() => {
+                          setSelectedCategoria(categoria);
+                          setShowEditCategory(true);
+                        }}
+                      >
+                        <Edit2 size={20} className='text-blue-700' />
+                      </button>
+                      <button className='hover:scale-110 transition'>
+                        <Trash2 size={20} className='text-red-700' />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
       {showCreateCategory && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -342,7 +433,7 @@ export function Estoque() {
                   maxLength={30}
                   required
                   value={formCatData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  onChange={(e) => setFormCatData({ ...formCatData, nome: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -352,8 +443,8 @@ export function Estoque() {
                   type="text"
                   maxLength={30}
                   required
-                  value={formCatData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  value={formCatData.prefix}
+                  onChange={(e) => setFormCatData({ ...formCatData, prefix: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -380,6 +471,12 @@ export function Estoque() {
         isOpen={showConfirmDelete}
         onCancel={() => setShowConfirmDelete(false)}
         onConfirm={() => handleDelete(deleteId)}
+      />
+      <EditCategoria
+        open={showEditCategory}
+        categoria={selectedCategoria}
+        onClose={() => setShowEditCategory(false)}
+        onSave={(newCategoria) => handleCategoryEdit(newCategoria)}
       />
     </div>
   );
