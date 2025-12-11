@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2, AlertTriangle, XIcon, AlignEndVertical } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, AlertTriangle, XIcon, AlignEndVertical, Eye } from 'lucide-react';
 import type Item from '../objects/Item';
 import { ConfirmDeleteModal } from './modal/DeleteConfimation';
 import { listarItens } from '../services/itemService';
 import type Categoria from '../objects/Categoria';
 import { atualizarCategoria, criarCategoria, deletarCategoria, listarCategorias } from '../services/categoriaService';
 import { EditCategoria } from './modal/EditCategoria';
+import MoreInfoEstoque from './modal/MoreInfoEstoque';
+import EditItem from './modal/EditItem';
 
 export function Estoque() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,6 +21,10 @@ export function Estoque() {
   const [showEditCategory, setShowEditCategory] = useState(false);
   const [itens, setItens] = useState<Item[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [showMoreInfo, setShowMoreInfo] = useState(false);
+  const [showEditItem, setShowEditItem] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -41,6 +47,16 @@ export function Estoque() {
     item.codigo!.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.categoria.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const abrirMaisInfo = (item: Item) => {
+    setSelectedItem(item);
+    setShowMoreInfo(true);
+  }
+  
+  const abrirEditItem = (item: Item) => {
+    setSelectedItem(item);
+    setShowMoreInfo(false);
+    setShowEditItem(true);
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,8 +243,10 @@ export function Estoque() {
                   <td className="px-6 py-4">R$ {item.preco_venda.toFixed(2)}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <button className="text-blue-600 hover:text-blue-800 p-1">
-                        <Edit2 size={18} />
+                      <button className="text-blue-600 hover:text-blue-800 p-1"
+                      onClick={() => abrirMaisInfo(item)}>
+                         
+                        <Eye size={18} />
                       </button>
                       <button
                         onClick={() => {
@@ -490,6 +508,18 @@ export function Estoque() {
         categoria={selectedCategoria}
         onClose={() => setShowEditCategory(false)}
         onSave={(newCategoria) => handleCategoryEdit(newCategoria)}
+      />
+      <MoreInfoEstoque
+        open={showMoreInfo}
+        onClose={() => setShowMoreInfo(false)}
+        item={selectedItem} 
+        onEdit={() => abrirEditItem(selectedItem!)}
+      />
+      <EditItem
+        open={showEditItem}
+        onClose={() => setShowEditItem(false)}
+        item={selectedItem} 
+        onSave={() => setShowEditItem(false)}
       />
     </div>
   );
