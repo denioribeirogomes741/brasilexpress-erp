@@ -11,6 +11,11 @@ export async function criarCategoria(nome_categoria: string, prefixo: string) {
 }
 
 export async function atualizarCategoria(id: number, nome_categoria: string, prefixo: string) {
-  const response = await api.put(`categorias/${id}`, { nome_categoria, prefixo })
+  const response = await api.put(`/categorias/${id}`, { nome_categoria, prefixo })
+  return response.data;
+}
+
+export async function deletarCategoria(id: number) {
+  const response = await api.delete(`/categorias/${id}`);
   return response.data;
 }

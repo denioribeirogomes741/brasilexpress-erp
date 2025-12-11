@@ -4,13 +4,14 @@ import type Item from '../objects/Item';
 import { ConfirmDeleteModal } from './modal/DeleteConfimation';
 import { listarItens } from '../services/itemService';
 import type Categoria from '../objects/Categoria';
-import { atualizarCategoria, criarCategoria, listarCategorias } from '../services/categoriaService';
+import { atualizarCategoria, criarCategoria, deletarCategoria, listarCategorias } from '../services/categoriaService';
 import { EditCategoria } from './modal/EditCategoria';
 
 export function Estoque() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteType, setDeleteType] = useState<string>('item');
   const [selectedCategoria, setSelectedCategoria] = useState<Categoria | null>(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
@@ -75,13 +76,17 @@ export function Estoque() {
     setShowCreateCategory(false);
   };
 
-  const handleDelete = (id: number | null) => {
+  const handleDelete = async (id: number | null) => {
     setShowConfirmDelete(false);
 
     if (!id) return;
 
-    setItens(itens.filter(i => i.id !== id));
-    setShowConfirmDelete(false);
+    if (deleteType == 'categoria') {
+      const response = await deletarCategoria(id);
+      if (response.ok) setCategorias(categorias.filter((c) => c.id !== id));
+    } else if (deleteType == 'item') {
+      setItens(itens.filter(i => i.id !== id));
+    }    
   };
 
   const handleCategoryEdit = async (categoria: Categoria) => {
@@ -227,6 +232,7 @@ export function Estoque() {
                       </button>
                       <button
                         onClick={() => {
+                          setDeleteType('item');
                           setDeleteId(item.id);
                           setShowConfirmDelete(true);
                         }}
@@ -410,7 +416,14 @@ export function Estoque() {
                       >
                         <Edit2 size={20} className='text-blue-700' />
                       </button>
-                      <button className='hover:scale-110 transition'>
+                      <button 
+                        className='hover:scale-110 transition'
+                        onClick={() => {
+                          setDeleteType('categoria');
+                          setDeleteId(categoria.id);
+                          setShowConfirmDelete(true);
+                        }}
+                      >
                         <Trash2 size={20} className='text-red-700' />
                       </button>
                     </td>
