@@ -25,6 +25,8 @@ router.post('/clientes', ctrl.createCliente);
 // Item
 router.get('/items', ctrl.listItems);
 router.post('/items', ctrl.createItem);
+router.put('/items/:id', ctrl.updateItem);
+router.delete('/items/:id', ctrl.deleteItem);
 
 // Venda
 router.post('/vendas', ctrl.createVenda);
