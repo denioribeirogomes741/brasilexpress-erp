@@ -229,10 +229,55 @@ export async function listItems(req: Request, res: Response) {
 }
 
 export async function createItem(req: Request, res: Response) {
-  const { nome_item, descricao, qnt, cod_categoria, pr_custo, pr_venda } = req.body;
+  const { nome_item, descricao, min_qnt, qnt, cod_categoria, condicao, pr_custo, pr_venda } = req.body;
   try {
-    await runQuery('INSERT INTO item (nome_item, descricao, qnt, cod_categoria, pr_custo, pr_venda) VALUES (:nome_item, :descricao, :qnt, :cod_categoria, :pr_custo, :pr_venda)', { nome_item, descricao, qnt, cod_categoria, pr_custo, pr_venda });
-    res.status(201).json({ ok: true });
+    await runQuery('INSERT INTO item (nome_item, descricao, min_qnt, qnt, cod_categoria, condicao, pr_custo, pr_venda) VALUES (:nome_item, :descricao, :min_qnt, :qnt, :cod_categoria, :condicao, :pr_custo, :pr_venda)', { nome_item, descricao, min_qnt, qnt, cod_categoria, condicao, pr_custo, pr_venda });
+
+    const r = await runQuery(
+      'SELECT * FROM item WHERE nome_item = :nome_item AND descricao = :descricao AND min_qnt = :min_qnt AND qnt = :qnt AND cod_categoria = :cod_categoria AND condicao = :condicao AND pr_custo = :pr_custo AND pr_venda = :pr_venda ORDER BY cod_item DESC FETCH FIRST 1 ROWS ONLY',
+      { nome_item, descricao, min_qnt, qnt, cod_categoria, condicao, pr_custo, pr_venda }
+    );
+
+    res.status(201).json((r.rows as any[])[0]);
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function updateItem(req: Request, res: Response) {
+  const id = Number(req.params.id);
+  const { nome_item, descricao, min_qnt, qnt, cod_categoria, condicao, pr_custo, pr_venda } = req.body;
+  try {
+    await runQuery('UPDATE item SET nome_item=:nome_item, descricao=:descricao, min_qnt=:min_qnt, qnt=:qnt, cod_categoria:=cod_categoria, condicao=:condicao, pr_custo=:pr_custo, pr_venda=:pr_venda WHERE cod_item=:id', { nome_item, descricao, min_qnt, qnt, cod_categoria, condicao, pr_custo, pr_venda, id });
+    res.json({ ok: true });
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message });
+  }
+
+  /*try {
+    await runQuery(
+      'UPDATE categoria SET nome_categoria=:nome_categoria, prefixo=:prefixo WHERE cod_categoria=:id', { nome_categoria, prefixo, id }
+    );
+
+    const r = await runQuery(
+      'SELECT * FROM categoria WHERE cod_categoria = :id',
+      { nome_categoria, prefixo, id }
+    );
+
+    res.status(201).json((r.rows as any[])[0]);
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message });
+  }*/
+}
+
+export async function deleteItem(req: Request, res: Response) {
+  const id = Number(req.params.id);
+  try {
+    await runQuery('DELETE FROM item WHERE cod_item = :id', { id });
+    res.json({ ok: true });
   } catch (error) {
     const err = error as Error;
     res.status(500).json({ error: err.message });
