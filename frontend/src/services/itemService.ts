@@ -16,6 +16,6 @@ export async function updateItem(id: number, nome_item: string, descricao: strin
 }
 
 export async function deleteItem(id: number) {
-  const response = await api.put(`/items/${id}`);
+  const response = await api.delete(`/items/${id}`);
   return response.data;
 }

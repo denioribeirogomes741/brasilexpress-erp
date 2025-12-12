@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { Plus, Search, Edit2, Trash2, AlertTriangle, XIcon, AlignEndVertical, Eye } from 'lucide-react';
 import type Item from '../objects/Item';
 import { ConfirmDeleteModal } from './modal/DeleteConfimation';
-import { listarItens } from '../services/itemService';
+import { criarItem, deleteItem, listarItens } from '../services/itemService';
 import type Categoria from '../objects/Categoria';
 import { atualizarCategoria, criarCategoria, deletarCategoria, listarCategorias } from '../services/categoriaService';
 import { EditCategoria } from './modal/EditCategoria';
 import MoreInfoEstoque from './modal/MoreInfoEstoque';
 import EditItem from './modal/EditItem';
+import { toast } from 'react-toastify';
 
 export function Estoque() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,38 +59,55 @@ export function Estoque() {
     setShowEditItem(true);
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const novoItem: Item = {
-      id: itens.length + 1,
-      nome: formData.nome,
-      descricao: formData.descricao,
-      categoria: formData.categoria,
-      quantidade: parseInt(formData.quantidade),
-      estoque_minimo: parseInt(formData.estoque_minimo),
-      preco_custo: parseFloat(formData.preco_custo),
-      preco_venda: parseFloat(formData.preco_venda),
-      condicao: formData.condicao,
+    
+    try {
+      const response = await criarItem(formData.nome, formData.descricao, Number(formData.estoque_minimo), Number(formData.quantidade), Number(formData.categoria), formData.condicao, Number(formData.preco_custo), Number(formData.preco_venda));
+      const novoItem: Item = {
+        id: response.COD_ITEM,
+        codigo: response.IDENTIFICADOR,
+        nome: response.NOME_ITEM,
+        descricao: response.DESCRICAO,
+        categoria: response.NOME_CATEGORIA,
+        quantidade: response.QNT,
+        estoque_minimo: response.MIN_QNT,
+        preco_custo: response.PR_CUSTO,
+        preco_venda: response.PR_VENDA,
+        condicao: response.CONDICAO
+      };
+      console.log(novoItem);
+      setItens([...itens, novoItem]);
+      setFormData({ nome: '', categoria: '', quantidade: '', estoque_minimo: '', preco_custo: '', preco_venda: '', condicao: '', descricao: '' });
+      setShowModal(false);
+      toast.success("Item criado com sucesso!");
+    } catch (e) {
+      console.error("Erro ao criar item: ", e);
+      toast.error("Erro ao criar item! Para mais detalhes, verifique o log.");
     };
-    setItens([...itens, novoItem]);
-    setFormData({ nome: '', categoria: '', quantidade: '', estoque_minimo: '', preco_custo: '', preco_venda: '', condicao: '', descricao: '' });
-    setShowModal(false);
   };
 
   const handleCatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const response = await criarCategoria(formCatData.nome, formCatData.prefix);
+    try {
+      const response = await criarCategoria(formCatData.nome, formCatData.prefix);
 
-    const novaCategoria: Categoria = {
-      id: response.COD_CATEGORIA,
-      nome: response.NOME_CATEGORIA,
-      prefix: response.PREFIXO
+      const novaCategoria: Categoria = {
+        id: response.COD_CATEGORIA,
+        nome: response.NOME_CATEGORIA,
+        prefix: response.PREFIXO
+      }
+
+      setCategorias([...categorias, novaCategoria]);
+      setFormCatData({ nome: '', prefix: '' });
+      setShowCreateCategory(false);
+      toast.success("Categoria criada com sucesso!");
+    } catch (e) {
+      console.error("Erro ao criar categoria: ", e);
+      toast.error("Erro ao criar categoria! Para mais detalhes, verifique o log.");
     }
-
-    setCategorias([...categorias, novaCategoria]);
-    setFormCatData({ nome: '', prefix: '' });
-    setShowCreateCategory(false);
+    
   };
 
   const handleDelete = async (id: number | null) => {
@@ -98,10 +116,27 @@ export function Estoque() {
     if (!id) return;
 
     if (deleteType == 'categoria') {
-      const response = await deletarCategoria(id);
-      if (response.ok) setCategorias(categorias.filter((c) => c.id !== id));
+      try {
+        const response = await deletarCategoria(id);
+        if (response.ok) {
+          setCategorias(categorias.filter((c) => c.id !== id));
+          toast.success("Categoria deletada com sucesso!");
+        };
+      } catch (e) {
+        console.error("Erro ao deletar categoria: ", e);
+        toast.error("Erro ao deletar categoria! Para mais detalhes, verifique o log.");
+      };
     } else if (deleteType == 'item') {
-      setItens(itens.filter(i => i.id !== id));
+      try {
+        const response = await deleteItem(id);
+        if (response.ok) {
+          setItens(itens.filter((i) => i.id !== id));
+          toast.success("Item deletado com sucesso!");
+        };
+      } catch (e) {
+        console.error("Erro ao deletar item: ", e);
+        toast.error("Erro ao deletar item! Para mais detalhes, verifique o log.");
+      };
     }    
   };
 
@@ -116,19 +151,21 @@ export function Estoque() {
               id: categoria.id,
               nome: categoria.nome,
               prefix: categoria.prefix
-            })
+            });
           } else {
             return ({
               id: cat.id,
               nome: cat.nome,
               prefix: cat.prefix
-            })
-          }
+            });
+          };
         })
         setCategorias(updatedCategorias);
+        toast.success("Categoria atualizada com sucesso!");
       };
     } catch (e) {
       console.error("Erro ao atualizar categoria: ", e);
+      console.error("Erro ao editar categoria! Para mais detalhes, verifique o log.");
     }
   }
 

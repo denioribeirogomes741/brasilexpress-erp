@@ -20,7 +20,7 @@ const EditItem: React.FC<ModalDetalhesOSProps> = ({
 }) => {
   if (!open || !item) return null;
 
-  const [form, setForm] = useState({ ...item   });
+  const [form, setForm] = useState({ ...item });
 
   const handleChange = (field: keyof Item, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -62,7 +62,7 @@ const EditItem: React.FC<ModalDetalhesOSProps> = ({
               {/* Descrição */}
               <div className="col-span-2">
                 <span className="font-medium text-gray-900 block">Descrição:</span>
-                <input
+                <textarea
                   className="w-full border rounded-lg p-2"
                   value={form.descricao}
                   onChange={(e) => handleChange("descricao", e.target.value)}

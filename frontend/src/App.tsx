@@ -5,6 +5,8 @@ import { Clientes } from './components/Clientes';
 import { Servicos } from './components/Servicos';
 import { Estoque } from './components/Estoque';
 import { Vendas } from './components/Vendas';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -28,6 +30,7 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
+      <ToastContainer position="top-right" autoClose={3000} />
       <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
       <main className="flex-1 p-8">
         {renderPage()}

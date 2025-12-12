@@ -206,7 +206,7 @@ export async function createCliente(req: Request, res: Response) {
 // --- Item CRUD ---
 export async function listItems(req: Request, res: Response) {
   try {
-    const r = await runQuery('SELECT COD_ITEM, IDENTIFICADOR, NOME_ITEM, DESCRICAO, MIN_QNT, QNT, NOME_CATEGORIA, CONDICAO, PR_CUSTO, PR_VENDA FROM item i JOIN categoria c ON i.cod_categoria = c.cod_categoria ORDER BY cod_item');
+    const r = await runQuery('SELECT COD_ITEM, IDENTIFICADOR, NOME_ITEM, DESCRICAO, MIN_QNT, QNT, NOME_CATEGORIA, CONDICAO, PR_CUSTO, PR_VENDA FROM item i JOIN categoria c ON i.cod_categoria = c.cod_categoria ORDER BY identificador');
     
     const itens = (r.rows as any[]).map(i => ({
       id: i.COD_ITEM,
@@ -231,11 +231,28 @@ export async function listItems(req: Request, res: Response) {
 export async function createItem(req: Request, res: Response) {
   const { nome_item, descricao, min_qnt, qnt, cod_categoria, condicao, pr_custo, pr_venda } = req.body;
   try {
-    await runQuery('INSERT INTO item (nome_item, descricao, min_qnt, qnt, cod_categoria, condicao, pr_custo, pr_venda) VALUES (:nome_item, :descricao, :min_qnt, :qnt, :cod_categoria, :condicao, :pr_custo, :pr_venda)', { nome_item, descricao, min_qnt, qnt, cod_categoria, condicao, pr_custo, pr_venda });
+    const result = await runQuery(
+      `INSERT INTO item (nome_item, descricao, min_qnt, qnt, cod_categoria, condicao, pr_custo, pr_venda)
+      VALUES (:nome_item, :descricao, :min_qnt, :qnt, :cod_categoria, :condicao, :pr_custo, :pr_venda)
+      RETURNING cod_item INTO :cod_item`,
+      {
+        nome_item,
+        descricao,
+        min_qnt,
+        qnt,
+        cod_categoria,
+        condicao,
+        pr_custo,
+        pr_venda,
+        cod_item: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
+      }
+    );
+
+    const cod_item = result.outBinds.cod_item[0];
 
     const r = await runQuery(
-      'SELECT * FROM item WHERE nome_item = :nome_item AND descricao = :descricao AND min_qnt = :min_qnt AND qnt = :qnt AND cod_categoria = :cod_categoria AND condicao = :condicao AND pr_custo = :pr_custo AND pr_venda = :pr_venda ORDER BY cod_item DESC FETCH FIRST 1 ROWS ONLY',
-      { nome_item, descricao, min_qnt, qnt, cod_categoria, condicao, pr_custo, pr_venda }
+      'SELECT COD_ITEM, IDENTIFICADOR, NOME_ITEM, DESCRICAO, MIN_QNT, QNT, NOME_CATEGORIA, CONDICAO, PR_CUSTO, PR_VENDA FROM item i JOIN categoria c ON i.cod_categoria = c.cod_categoria WHERE cod_item=:cod_item',
+      { cod_item }
     );
 
     res.status(201).json((r.rows as any[])[0]);
