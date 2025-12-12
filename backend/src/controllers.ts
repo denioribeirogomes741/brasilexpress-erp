@@ -301,6 +301,93 @@ export async function deleteItem(req: Request, res: Response) {
   }
 }
 
+// --- SubItens ---
+export async function listSubItens(req: Request, res: Response) {
+  try {
+    const r = await runQuery('SELECT COD_SUBITEM, COD_ITEM, NOME_SUBITEM, DESCRICAO FROM sub_item ORDER BY COD_SUBITEM');
+    
+    const itens = (r.rows as any[]).map(i => ({
+      id: i.COD_SUBITEM,
+      cod_item: i.COD_ITEM,
+      nome: i.NOME_SUBITEM,
+      descricao: i.DESCRICAO,
+    }));
+    
+    res.json(itens);
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function createSubItem(req: Request, res: Response) {
+  const { cod_item, nome_subitem, descricao } = req.body;
+  try {
+    const result = await runQuery(
+      `INSERT INTO sub_item (cod_item, nome_subitem, descricao)
+      VALUES (:cod_item, :nome_subitem, :descricao)
+      RETURNING cod_subitem INTO :cod_subitem`,
+      {
+        cod_item,
+        nome_subitem,
+        descricao,
+        cod_subitem: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
+      }
+    );
+
+    const cod_subitem = result.outBinds.cod_subitem[0];
+
+    const r = await runQuery(
+      'SELECT COD_SUBITEM, COD_ITEM, NOME_SUBITEM, DESCRICAO FROM sub_item WHERE cod_subitem=:cod_subitem',
+      { cod_subitem }
+    );
+
+    res.status(201).json((r.rows as any[])[0]);
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function updateSubItem(req: Request, res: Response) {
+  const id = Number(req.params.id);
+  const { cod_item, nome_subitem, descricao } = req.body;
+  try {
+    await runQuery('UPDATE sub_item SET cod_item=:cod_item, nome_subitem=:nome_subitem, descricao=:descricao WHERE cod_item=:id', { id, cod_item, nome_subitem, descricao });
+    res.json({ ok: true });
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message });
+  }
+
+  /*try {
+    await runQuery(
+      'UPDATE categoria SET nome_categoria=:nome_categoria, prefixo=:prefixo WHERE cod_categoria=:id', { nome_categoria, prefixo, id }
+    );
+
+    const r = await runQuery(
+      'SELECT * FROM categoria WHERE cod_categoria = :id',
+      { nome_categoria, prefixo, id }
+    );
+
+    res.status(201).json((r.rows as any[])[0]);
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message });
+  }*/
+}
+
+export async function deleteSubItem(req: Request, res: Response) {
+  const id = Number(req.params.id);
+  try {
+    await runQuery('DELETE FROM sub_item WHERE cod_subitem = :id', { id });
+    res.json({ ok: true });
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message });
+  }
+}
+
 // --- Venda + itens_venda ---
 export async function createVenda(req: Request, res: Response) {
   const { valor_total = 0, obs = null, cod_metodo = null, cod_cliente = null, itens = [] } = req.body;

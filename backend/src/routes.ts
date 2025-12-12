@@ -28,6 +28,12 @@ router.post('/items', ctrl.createItem);
 router.put('/items/:id', ctrl.updateItem);
 router.delete('/items/:id', ctrl.deleteItem);
 
+// SubItens
+router.get('/sub-itens', ctrl.listSubItens);
+router.post('/sub-itens', ctrl.createSubItem);
+router.put('/sub-itens/:id', ctrl.updateSubItem);
+router.delete('/sub-itens/:id', ctrl.deleteSubItem);
+
 // Venda
 router.post('/vendas', ctrl.createVenda);
 router.get('/vendas/:id', ctrl.getVenda);

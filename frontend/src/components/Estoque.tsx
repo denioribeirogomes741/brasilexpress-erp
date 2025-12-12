@@ -7,8 +7,11 @@ import type Categoria from '../objects/Categoria';
 import { atualizarCategoria, criarCategoria, deletarCategoria, listarCategorias } from '../services/categoriaService';
 import { EditCategoria } from './modal/EditCategoria';
 import MoreInfoEstoque from './modal/MoreInfoEstoque';
-import EditItem from './modal/EditItem';
+import { EditItem } from './modal/EditItem';
 import { toast } from 'react-toastify';
+import { criarSubItem, deletarSubItem, listarSubItens } from '../services/subItensService';
+import type SubItem from '../objects/SubItem';
+import { CreateSubItem } from './modal/CreateSubItem';
 
 export function Estoque() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,8 +23,10 @@ export function Estoque() {
   const [showCategories, setShowCategories] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
   const [showEditCategory, setShowEditCategory] = useState(false);
+  const [showCreateSubItem, setShowCreateSubItem] = useState(false);
   const [itens, setItens] = useState<Item[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [subItens, setSubItens] = useState<SubItem[]>([]);
   const [showMoreInfo, setShowMoreInfo] = useState(false);
   const [showEditItem, setShowEditItem] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -61,6 +66,13 @@ export function Estoque() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.categoria) {
+      toast.error("Por favor, selecione uma categoria!");
+      return;
+    }
+    
+    console.log(formData.nome, formData.descricao, Number(formData.estoque_minimo), Number(formData.quantidade), Number(formData.categoria), formData.condicao, Number(formData.preco_custo), Number(formData.preco_venda));
     
     try {
       const response = await criarItem(formData.nome, formData.descricao, Number(formData.estoque_minimo), Number(formData.quantidade), Number(formData.categoria), formData.condicao, Number(formData.preco_custo), Number(formData.preco_venda));
@@ -137,7 +149,18 @@ export function Estoque() {
         console.error("Erro ao deletar item: ", e);
         toast.error("Erro ao deletar item! Para mais detalhes, verifique o log.");
       };
-    }    
+    } else if (deleteType == 'subitem') {
+      try {
+        const response = await deletarSubItem(id);
+        if (response.ok) {
+          toast.success("Sub-item deletado com sucesso!");
+          setSubItens(subItens.filter((subItem) => subItem.id !== id))
+        }
+      } catch (e) {
+        console.error("Erro ao deletar sub-item: ", e);
+        toast.error("Erro ao deletar sub-item! Para mais detalhes, verifique o log.");
+      };
+    }
   };
 
   const handleCategoryEdit = async (categoria: Categoria) => {
@@ -167,6 +190,30 @@ export function Estoque() {
       console.error("Erro ao atualizar categoria: ", e);
       console.error("Erro ao editar categoria! Para mais detalhes, verifique o log.");
     }
+  };
+
+  const handleCreateSubItem = async (nome_subitem: string, descricao: string) => {
+    setShowCreateSubItem(false);
+    try {
+      const response = await criarSubItem(selectedItem!.id, nome_subitem, descricao);
+
+      const newSubItem: SubItem = {
+        id: response.COD_SUBITEM,
+        cod_item: response.COD_ITEM,
+        nome: response.NOME_SUBITEM,
+        descricao: response.DESCRICAO
+      };
+
+      setSubItens([...subItens, newSubItem]);
+      toast.success("Sub-item criado com sucesso!");
+    } catch (e) {
+      console.error("Erro ao criar sub-item: ", e);
+      toast.error("Erro ao criar sub-item! Para mais detalhes, verifique o log.");
+    };
+  };
+
+  const filterSubItens = (): SubItem[] => {
+    return selectedItem ? subItens.filter((subItem) => subItem.cod_item === selectedItem.id) : [];
   }
 
   useEffect(() => {
@@ -189,8 +236,18 @@ export function Estoque() {
       };
     };
     fetchCategorias();
+
+    const fetchSubItens = async () => {
+      try {
+        const subItensData = await listarSubItens();
+        setSubItens(subItensData);
+      } catch (e) {
+        console.error("Erro ao listar sub-itens: ", e);
+      };
+    };
+    fetchSubItens();
   }, []);
-  
+
 
   const itensAbaixoMinimo = itens.filter(item => item.quantidade < item.estoque_minimo);
 
@@ -313,9 +370,17 @@ export function Estoque() {
                 <div>
                   <label className="block text-sm mb-1 text-gray-700">Categoria</label>
                   <div className='flex h-10 gap-2 justify-between'>
-                    <select className='w-full px-1 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent' onChange={(e) => setFormData({...formData, categoria: e.target.value})} name="categoria" id="categoria">
+                    <select
+                      className='w-full px-1 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                      required
+                      value={formData.categoria || ""}
+                      onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
+                    >
+                      <option value="">Selecione uma categoria</option>
                       {categorias.map((categoria) => (
-                        <option value={categoria.id}>{categoria.nome}</option>
+                        <option key={categoria.id} value={categoria.id}>
+                          {categoria.nome}
+                        </option>
                       ))}
                     </select>
                     <button
@@ -342,7 +407,27 @@ export function Estoque() {
                 </div>
                 <div>
                   <label className='block text-sm mb-1 text-gray-700'>Condição</label>
-                  <select className='w-full px-1 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent' onChange={(e) => setFormData({...formData, condicao: e.target.value})} name="condicao" id="condicao">
+                  <select
+                    className="w-full px-1 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={(e) => {
+                      const condicao = e.target.value;
+                      if (condicao === "Usado") {
+                        setFormData({
+                          ...formData,
+                          condicao,
+                          quantidade: '0',
+                          estoque_minimo: '0',
+                        });
+                      } else {
+                        setFormData({
+                          ...formData,
+                          condicao,
+                        });
+                      }
+                    }}
+                    name="condicao"
+                    id="condicao"
+                  >
                     <option value="Novo">Novo</option>
                     <option value="Usado">Usado</option>
                   </select>
@@ -363,20 +448,22 @@ export function Estoque() {
                   <label className="block text-sm mb-1 text-gray-700">Quantidade</label>
                   <input
                     type="number"
-                    required
-                    value={formData.quantidade}
+                    required={formData.condicao !== "Usado"}
+                    disabled={formData.condicao === "Usado"}
+                    value={formData.quantidade ?? ""}
                     onChange={(e) => setFormData({ ...formData, quantidade: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${formData.condicao === "Usado" ? "bg-gray-200" : "bg-white"}`}
                   />
                 </div>
                 <div>
                   <label className="block text-sm mb-1 text-gray-700">Estoque Mínimo</label>
                   <input
                     type="number"
-                    required
-                    value={formData.estoque_minimo}
+                    required={formData.condicao !== "Usado"}
+                    disabled={formData.condicao === "Usado"}
+                    value={formData.estoque_minimo ?? ""}
                     onChange={(e) => setFormData({ ...formData, estoque_minimo: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${formData.condicao === "Usado" ? "bg-gray-200" : "bg-white"}`}
                   />
                 </div>
               </div>
@@ -407,7 +494,10 @@ export function Estoque() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    setShowModal(false)
+                    setFormData({ nome: '', categoria: '', quantidade: '', estoque_minimo: '', preco_custo: '', preco_venda: '', condicao: '', descricao: '' });
+                  }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Cancelar
@@ -550,7 +640,19 @@ export function Estoque() {
         open={showMoreInfo}
         onClose={() => setShowMoreInfo(false)}
         item={selectedItem} 
+        onAddSubItem={() => setShowCreateSubItem(true)}
         onEdit={() => abrirEditItem(selectedItem!)}
+        subItens={filterSubItens()}
+        onDelete={(id) => {
+          setDeleteType('subitem');
+          setDeleteId(id);
+          setShowConfirmDelete(true);
+        }}
+      />
+      <CreateSubItem
+        open={showCreateSubItem}
+        onClose={() => setShowCreateSubItem(false)}
+        onSave={(nome_subitem, descricao) => handleCreateSubItem(nome_subitem, descricao)}
       />
       <EditItem
         open={showEditItem}
