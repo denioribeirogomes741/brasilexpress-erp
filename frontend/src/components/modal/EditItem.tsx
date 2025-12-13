@@ -28,7 +28,7 @@ export const EditItem: React.FC<ModalDetalhesOSProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl w-full max-w-xl p-8 shadow-2xl">
+      <div className="bg-white rounded-2xl w-full max-w-2xl p-8 shadow-2xl">
 
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-semibold text-gray-800">Editar Item</h2>
@@ -52,7 +52,11 @@ export const EditItem: React.FC<ModalDetalhesOSProps> = ({
 
               <p>
                 <span className="font-medium text-gray-900 block">Nome:</span>
-                {item.nome}
+                <input
+                  className="w-full border rounded-lg p-2"
+                  value={form.nome}
+                  onChange={(e) => handleChange("nome", e.target.value)}
+                />
               </p>
 
               <div className="col-span-2">
@@ -64,14 +68,6 @@ export const EditItem: React.FC<ModalDetalhesOSProps> = ({
                 />
               </div>
 
-              <div className="col-span-2">
-                <span className="font-medium text-gray-900 block">Categoria:</span>
-                <input
-                  className="w-full border rounded-lg p-2"
-                  value={form.categoria}
-                  onChange={(e) => handleChange("categoria", e.target.value)}
-                />
-              </div>
             </div>
           </div>
 
@@ -87,15 +83,15 @@ export const EditItem: React.FC<ModalDetalhesOSProps> = ({
                   className="w-full border rounded-lg p-2"
                   value={form.preco_custo}
                   onChange={(e) => {
-                const v = e.target.value;
+                    const v = e.target.value;
 
-                if (v === "") {
-                    handleChange("preco_custo", "");
-                    return;
-                }
+                    if (v === "") {
+                        handleChange("preco_custo", "");
+                        return;
+                    }
 
-                handleChange("preco_custo", Number(v));
-                }}
+                    handleChange("preco_custo", Number(v));
+                  }}
                 />
               </div>
 
@@ -121,21 +117,6 @@ export const EditItem: React.FC<ModalDetalhesOSProps> = ({
             </div>
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-700 mb-3">Condição</h3>
-
-            <div className="grid grid-cols-2 gap-4 text-gray-700">
-
-              <div className="col-span-2">
-                <span className="font-medium text-gray-900 block">Condição:</span>
-                <select value={form.condicao} name="condicao" id="condicao" className="w-full border rounded-lg p-2" onChange={(e) => handleChange("condicao", e.target.value)}>
-                    <option value="Novo">Novo</option>
-                    <option value="Usado">Usado</option>
-                </select>
-              </div>
-
-            </div>
-          </div>
         </div>
 
         <div className="flex justify-end mt-8 gap-3">

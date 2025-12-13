@@ -55,6 +55,7 @@ export function Estoque() {
   );
   const abrirMaisInfo = (item: Item) => {
     setSelectedItem(item);
+    console.log("Condição: ", item.condicao);
     setShowMoreInfo(true);
   }
   
