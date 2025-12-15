@@ -51,7 +51,8 @@ export function Estoque() {
   const filteredItens = itens.filter(item =>
     item.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.codigo!.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.categoria.toLowerCase().includes(searchTerm.toLowerCase())
+    item.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.descricao.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const abrirMaisInfo = (item: Item) => {
     setSelectedItem(item);
@@ -306,6 +307,7 @@ export function Estoque() {
                 <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Código</th>
                 <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Produto</th>
                 <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Categoria</th>
+                <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Condição</th>
                 <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Quantidade (Min.)</th>
                 <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Preço Custo</th>
                 <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Preço Venda</th>
@@ -323,6 +325,11 @@ export function Estoque() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
+                    <span className="px-3 py-1 rounded-full text-white text-sm bg-blue-600 shadow-sm">
+                      {item.condicao}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div className='flex items-center gap-2'>
                         <span>{item.quantidade}</span>
@@ -331,7 +338,7 @@ export function Estoque() {
                         )}
                       </div>
                       
-                      <p className='ml-3 opacity-50'>({item.estoque_minimo})</p>
+                      {item.estoque_minimo > 0 && <p className='ml-3 opacity-50'>({item.estoque_minimo})</p>} 
                     </div>
                   </td>
                   <td className="px-6 py-4">R$ {item.preco_custo.toFixed(2)}</td>
@@ -372,12 +379,20 @@ export function Estoque() {
                   <label className="block text-sm mb-1 text-gray-700">Categoria</label>
                   <div className='flex h-10 gap-2 justify-between'>
                     <select
-                      className='w-full px-1 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                       required
+                      className="w-full px-1 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={formData.categoria || ""}
-                      onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, categoria: e.target.value })
+                      }
+                      name="categoria"
+                      id="categoria"
                     >
-                      <option value="">Selecione uma categoria</option>
+                      {/* opção default inválida */}
+                      <option value="" disabled hidden>
+                        Selecione uma categoria
+                      </option>
+
                       {categorias.map((categoria) => (
                         <option key={categoria.id} value={categoria.id}>
                           {categoria.nome}
@@ -409,6 +424,7 @@ export function Estoque() {
                 <div>
                   <label className='block text-sm mb-1 text-gray-700'>Condição</label>
                   <select
+                    required
                     className="w-full px-1 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     onChange={(e) => {
                       const condicao = e.target.value;
@@ -416,8 +432,8 @@ export function Estoque() {
                         setFormData({
                           ...formData,
                           condicao,
-                          quantidade: '0',
-                          estoque_minimo: '0',
+                          quantidade: "0",
+                          estoque_minimo: "0",
                         });
                       } else {
                         setFormData({
@@ -428,7 +444,11 @@ export function Estoque() {
                     }}
                     name="condicao"
                     id="condicao"
+                    value={formData.condicao || ""} // garante que o estado inicial seja vazio
                   >
+                    <option value="" disabled hidden>
+                      Selecione uma condição
+                    </option>
                     <option value="Novo">Novo</option>
                     <option value="Usado">Usado</option>
                   </select>

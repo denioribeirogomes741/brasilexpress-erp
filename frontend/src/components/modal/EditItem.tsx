@@ -117,6 +117,54 @@ export const EditItem: React.FC<ModalDetalhesOSProps> = ({
             </div>
           </div>
 
+          {item.condicao == "Novo" &&
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Quantidade</h3>
+
+              <div className="grid grid-cols-2 gap-4 text-gray-700">
+
+                <div>
+                  <span className="font-medium text-gray-900 block">Estoque mínimo:</span>
+                  <input
+                    type="number"
+                    className="w-full border rounded-lg p-2"
+                    value={form.estoque_minimo}
+                    onChange={(e) => {
+                      const v = e.target.value;
+
+                      if (v === "") {
+                          handleChange("estoque_minimo", "");
+                          return;
+                      }
+
+                      handleChange("estoque_minimo", Number(v));
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <span className="font-medium text-gray-900 block">Quantidade:</span>
+                  <input
+                    type="number"
+                    className="w-full border rounded-lg p-2"
+                    value={form.quantidade}
+                    onChange={(e) => {
+                  const v = e.target.value;
+
+                  if (v === "") {
+                      handleChange("quantidade", "");
+                      return;
+                  }
+
+                  handleChange("quantidade", Number(v));
+                  }}
+                  />
+                </div>
+
+              </div>
+            </div>
+          }
+
         </div>
 
         <div className="flex justify-end mt-8 gap-3">

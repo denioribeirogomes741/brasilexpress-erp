@@ -77,6 +77,18 @@ const MoreInfoEstoque: React.FC<ModalDetalhesOSProps> = ({
                   {item.condicao}
                 </span>
               </p>
+              <p>
+                <span className="font-medium text-gray-900 block">
+                  Estoque Mínimo:
+                </span>
+                {item.estoque_minimo > 0 ? `Min. ${item.estoque_minimo}x` : <i>Desativado</i>} 
+              </p>
+              <p>
+                <span className="font-medium text-gray-900 block">
+                  Quantidade:
+                </span>
+                <i>{item.quantidade}x em estoque</i>
+              </p>
             </div>
           </div>
 
